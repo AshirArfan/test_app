@@ -3,17 +3,17 @@ version: '3.8'
 services:
   frontend:
     build: ./frontend
-    ports:
-      - "3000:3000"
-    restart: always
+    command: npm run build
+    volumes:
+      - build_data:/app/build
     depends_on:
       - backend
-  
+
   backend:
     build: ./backend
-    ports:
-      - "5000:5000"
     restart: always
+    expose:
+      - "5000"
     environment:
       - DATABASE_URL=postgres://user:password@db:5432/mydatabase
     depends_on:
@@ -21,8 +21,7 @@ services:
 
   db:
     image: postgres:latest
-    ports:
-      - "5432:5432"
+    restart: always
     environment:
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
@@ -31,5 +30,16 @@ services:
       - db_data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
 
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend
+    volumes:
+      - build_data:/usr/share/nginx/html
+
 volumes:
   db_data:
+  build_data:
